@@ -1,0 +1,59 @@
+#include <math_constants>
+
+const vec3 WHITE = vec3(1,1,1);
+const vec3 BLACK = vec3(0,0,0);
+const vec3 BLUE  = vec3(0,0,1);
+const vec3 RED   = vec3(1,0,0);
+const vec3 GREEN = vec3(0,1,0);
+
+const vec2 res = vec2(500,500);
+
+parameter float test1 = 1, test2 = 1, test3 = 5 : range(-5,5);
+
+glsl vec3 Circ(vec2 coord){
+  vec2 p = 2*(coord - .5);
+  float tau = 3.1415926535*2.0;
+  float a = atan(p.x,p.y);
+  float r = length(p)*test1;
+  vec2 uv = vec2(a/tau,r);
+
+  //get the color
+  float xCol = (uv.x + shadron_Time/10) * 3.0;
+  xCol = mod(xCol, 3.0);
+  vec3 horColour = vec3(0.25, 0.25, 0.25);
+  
+  if (xCol < 1.0) {
+    
+    horColour.r += 1.0 - xCol;
+    horColour.g += xCol;
+  }
+  else if (xCol < 2.0) {
+    
+    xCol -= 1.0;
+    horColour.g += 1.0 - xCol;
+    horColour.b += xCol;
+  }
+  else {
+    
+    xCol -= 2.0;
+    horColour.b += 1.0 - xCol;
+    horColour.r += xCol;
+  }
+
+  // draw color beam
+  uv = (2.0 * uv) - 1.0;
+  float beamWidth = (.7+.5*cos(uv.x*10.0*tau*0.15*clamp(.0, 0.0, 10.0))) * abs(1.0 / (10.0 * uv.y));
+  vec3 horBeam = vec3(beamWidth) * test2;
+  vec3 fcolor = vec3( horBeam * horColour);
+
+  if(uv.y > test3)
+    fcolor = vec3(0,0,0);
+
+  return fcolor;
+} 
+
+glsl vec3 Preview(vec2 coord){
+  return Circ(coord);
+}
+
+animation ShaderTestImg = glsl(Preview, res.x, res.y);

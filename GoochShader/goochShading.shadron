@@ -1,0 +1,77 @@
+#include <math_constants>
+#include <affine_transform>
+#include <lighting>
+#include <sphere>
+
+parameter int MERIDIANS = 128, PARALLELS = 64 : logrange(2, 1024);
+parameter float distance = 4.0 : range(16.0);
+parameter vec3 warmColor = vec3(1.0), coldColor = vec3(1.0) : color();
+parameter float specularIntensity, shininess;
+parameter float outline = 0.2;
+const float NEAR = 1.0/256.0, FAR = 256.0;
+parameter vec3 lightDirection = vec3(0.0, 0.0, -1.0) : range(vec3(255), vec3(-255));
+
+
+image Texture = file() : filter(anisotropic);
+
+
+glsl struct FragmentData {
+    vec3 pos;
+    vec2 texCoord;
+    vec3 normal;
+    vec3 eyeVec;
+};
+
+
+
+glsl vec4 vertexShader(out FragmentData f, int index) {
+    vec3 coord = sphereCoord<MERIDIANS, PARALLELS>(index);
+    f.texCoord = sphereTexCoord<MERIDIANS, PARALLELS>(index);
+    f.normal = sphereNormal<MERIDIANS, PARALLELS>(index);
+
+
+    // Transform coordinate
+    vec2 rotation = 0.05*shadron_Mouse.xy;
+    coord = rotateZ(coord, PI+rotation.x);
+    coord = rotateX(coord, -0.5*PI+rotation.y);
+    coord = translate(coord, vec3(0.0, 0.0, -distance));
+
+    f.pos = coord;
+
+    // Transform normal
+    f.normal = rotateZ(f.normal, PI+rotation.x);
+    f.normal = rotateX(f.normal, -0.5*PI+rotation.y);
+
+    f.eyeVec = -vec3(gl_ModelViewMatrix* vec4(coord,1));
+
+
+    // Perspective projection
+    float fov = 0.5*PI-atan(0.0625*shadron_Mouse.z);
+    return projectPerspectiveHFOV(coord, fov, NEAR, FAR);
+}
+
+// The fragment shader
+glsl vec3 fragmentShader(in FragmentData f) {
+
+    vec3 texColor = texture(Texture, f.texCoord).rgb;
+
+    vec3 cool = min(coldColor, 1.0);
+    vec3 warm = min(warmColor, 1.0);
+
+    float specular = specularIntensity*log(shininess)*specularLight(normalize(lightDirection), f.normal, normalize(f.pos), shininess);
+
+    vec3 color = min(mix(cool,warm,diffuseLight(normalize(lightDirection), f.normal)) + specular ,1.0); 
+
+    if(dot(normalize(f.normal), normalize(f.eyeVec)) < outline)
+        color = vec3(1,1,1);       
+
+    return color;
+}
+
+// Sphere model definition
+model Sphere :
+    fragment_data(FragmentData),
+    vertex(vertexShader, SPHERE_PRIMITIVES, SPHERE_VERTEX_COUNT(MERIDIANS, PARALLELS)),
+    fragment(fragmentShader),
+    multisample(4);
+

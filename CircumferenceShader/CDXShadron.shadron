@@ -1,0 +1,79 @@
+#include <math_constants>
+
+const vec3 WHITE = vec3(1,1,1);
+const vec3 BLACK = vec3(0,0,0);
+const vec3 BLUE  = vec3(0,0,1);
+const vec3 RED   = vec3(1,0,0);
+const vec3 GREEN = vec3(0,1,0);
+
+parameter vec2 scaleImage = vec2(1,1);
+parameter bool offPlayers = false;
+
+parameter vec3 BackgroundColor = BLACK : color();
+parameter vec3 CircleColor = BLUE : color();
+parameter float circleRadius = 0.169767 : range(-.5,.5);
+parameter float circleBorder = 0.006976 : range(0,.5);
+
+parameter float speed1 = 1 : range(-5,5);
+parameter float lineSize1 = 0.956744 : range(0,1.1);
+parameter vec3 Player1Color = RED : color();
+
+parameter float speed2 = -1 : range(-5,5);
+parameter float lineSize2 = 0.956744 : range(0,1.1);
+parameter vec3 Player2Color = GREEN : color();
+
+
+
+glsl vec3 Circumference(vec2 uv, float circleRadius){
+
+  vec3 fcolor = CircleColor;
+  uv -= .5;
+  uv *= scaleImage;
+  float dist = sqrt(dot(uv,uv));
+  float t = 1.0 + smoothstep(circleRadius, circleRadius + circleBorder, dist)
+                - smoothstep(circleRadius - circleBorder, circleRadius, dist);
+ 
+  if(dist < circleRadius + circleBorder){
+
+    if(dist < circleRadius - circleBorder){
+      //inside drawing
+      return mix(BackgroundColor,BackgroundColor,t);
+    }
+
+    vec2 PlayerPos1 = vec2(circleRadius*cos(shadron_Time*speed1), circleRadius*sin(shadron_Time*speed1));
+    vec2 PlayerPos2 = vec2(circleRadius*cos(shadron_Time*speed2), circleRadius*sin(shadron_Time*speed2));
+
+
+    int count = 0;
+    if(!offPlayers){
+	    float dist1 = sqrt(dot(uv,PlayerPos1));
+	    if(dist1 > circleRadius*lineSize1)
+	    {
+	      count++;
+	      fcolor = Player1Color;
+	    }
+
+	    float dist2 = sqrt(dot(uv,PlayerPos2));
+	    if(dist2 > circleRadius*lineSize2)
+	    {
+	      count++;
+	      fcolor = Player2Color;
+	    }
+
+	    if(count == 2){
+	      fcolor = Player1Color + Player2Color;
+	    }
+	}
+
+
+  	return mix(fcolor,BackgroundColor, t);
+  }
+    //outside drawing
+    return mix(BackgroundColor,BackgroundColor,t);
+} 
+
+glsl vec3 Preview(vec2 uv){
+  return Circumference(uv, circleRadius - (1 + cos(shadron_Time))/(120) - clamp(sin(shadron_Time/8),0,0.1));
+}
+
+animation CDXShaderTestImg = glsl(Preview, 500, 500);

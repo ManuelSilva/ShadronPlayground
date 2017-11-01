@@ -1,0 +1,26 @@
+parameter vec2 lightPos = vec2(.5,-.5) : range(-1,1);
+parameter float mag = 0.5;
+
+glsl vec3 fakeSphere(vec2 pos, vec3 fcolor){
+
+	vec2 p = -1.0 + 2.0 * pos;
+  	float r = sqrt(dot(p,p));
+  	
+  	if (r < 1.0)
+  	{
+    	vec2 uv;
+   		float f = (1.0-sqrt(1.0-r))/(r);
+    	uv.x = p.x*f + lightPos.x;
+    	uv.y = p.y*f + lightPos.y;
+    	float mag1 = 1 - length(uv)*mag;
+    	fcolor = vec3(1,1,1)*mag1;
+  	}
+
+	return fcolor;
+} 
+
+glsl vec3 fakeSpherePreview(vec2 coord){
+  return fakeSphere(coord, vec3(1,1,1));
+}
+
+image fakeSphereImg = glsl(fakeSpherePreview, 1000/3, 1000/3);

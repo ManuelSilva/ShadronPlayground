@@ -1,0 +1,62 @@
+#include <perlin>
+#include <math_constants>
+
+const vec2 res = vec2(512,512);
+parameter ivec2 period = ivec2(1,100) : range(0,100);//keep x at 1
+parameter float rotation = -2.093023 : range(-10,10);
+parameter int scale = 2 : range(0,12);//try moving this
+parameter float speed1 = -0.079999;
+parameter float speed2 = 0.079999;
+parameter float animationRestart = 1000.000000;
+parameter float zoom = 9.000000;
+
+parameter float magnitude = 0;
+parameter float clock = .5, clock1 = -0.188372, clock2 = -0.095348: range(-.5,.5);
+parameter float rad1 = 0.246511, rad2 = 0.641860, rad3 = 0.153488, uQuantize = 0.362790;
+
+
+glsl vec3 PerlinTest(vec2 coord){
+	vec2 p = 2*(coord - .5);
+	float tau = TAU;
+	float a = atan(p.x,p.y);
+    float r = length(p)*zoom;
+    vec2 uv = vec2(a/tau,r);
+
+	uv.y -= mod(speed1*shadron_Time,animationRestart);
+	float rot = rotation + mod(speed2*shadron_Time,animationRestart);
+
+	return vec3(perlinNoise(uv*scale, vec2(period.x, period.y), rot));
+}
+
+glsl vec3 PerlinPreview(vec2 coord){
+	return PerlinTest(coord);
+}
+
+
+glsl vec3 test(vec2 coord){
+	
+	vec2 p = 2*(coord - .5);
+	float tau = TAU;
+	float a = atan(p.x,p.y);
+    float r = length(p);
+    vec2 uv = vec2(a/tau,r);
+
+
+
+    vec3 fcolor = vec3(0,0,0);
+    if(uv.x < clock && uv.y > rad1 && uv.y < rad2){
+    	fcolor = vec3(0,0,PerlinTest(coord)/uQuantize);
+    }
+
+    if(uv.y < rad3){
+    	fcolor = vec3((1 + cos(shadron_Time))/4,  (1 +sin(shadron_Time))/4, 1);
+    	if(uv.x > clock1 && uv.x < clock2){
+    		fcolor = vec3(0,0,0);
+    	}
+    }
+
+    return fcolor;
+}
+
+animation perlinAnimation = glsl(PerlinPreview, res);
+animation finalAnim = glsl(test, res);

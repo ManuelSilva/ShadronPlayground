@@ -1,0 +1,61 @@
+#define real float
+#define complex vec2
+
+#include <multisample>
+
+parameter float uMagTol : range(-1,100);
+parameter float uQuantize : range(-1,100);
+
+parameter float red = 0, green= 0, blue = 0, alpha = 1: range(0,1);
+
+parameter float wx = 0.5, wy = 0.5, wz = 0.5 : range(0,1);
+
+image uImageUnit = file();
+
+
+parameter int samples = 2 : range(1, 4);
+
+glsl vec4 toonShader(vec2 vST) {
+    vec4 fFragColor;
+
+
+    ivec2 ires = textureSize(uImageUnit, 0);
+    float uResS = float(ires.s);
+    float uResT = float(ires.t);
+
+    vec3 rgb = texture(uImageUnit, vST).rgb;
+    vec2 stp0 = vec2(1./uResS, 0);
+    vec2 st0p = vec2(0.,1./uResT);
+    vec2 stpp = vec2(1./uResS, 1./uResT);
+    vec2 stpm = vec2(1./uResS, -1./uResT);
+
+    vec3 W = vec3(wx,wy,wz);
+    float i00 = dot(texture(uImageUnit, vST).rgb, W);
+    float im1m1 = dot(texture(uImageUnit, vST - stpp).rgb, W);
+    float ip1p1 = dot(texture(uImageUnit, vST + stpp).rgb, W);
+    float im1p1 = dot(texture(uImageUnit, vST - stpm).rgb, W);
+    float ip1m1 = dot(texture(uImageUnit, vST + stpm).rgb, W);
+    float im10 = dot(texture(uImageUnit, vST - stp0).rgb, W);
+    float ip10 = dot(texture(uImageUnit, vST + stp0).rgb,W);
+    float i0m1 = dot(texture(uImageUnit, vST - st0p).rgb, W);
+    float i0p1 = dot(texture(uImageUnit, vST + st0p).rgb, W);
+
+    float h = -1.*im1p1-2.*i0p1-1.*ip1p1+1.*im1m1+2.*i0m1+1.*ip1m1;
+    float v = -1.*im1m1-2.*im10-1.*im1p1+1.*ip1m1+2.*ip10+1.*ip1p1;
+    float mag = length(vec2(h,v));
+    
+    if(mag > uMagTol)
+        fFragColor = vec4(red,green,blue,alpha);
+    else{//Quantize image
+        rgb.rgb *= uQuantize;
+        rgb.rgb += vec3(.5,.5,.5);
+        ivec3 intrgb = ivec3(rgb.rgb);
+        rgb.rgb = vec3(intrgb)/ uQuantize;
+        fFragColor = vec4(rgb, 1.);
+        //fFragColor = vec4(rgb, 1.);
+    }
+
+    return fFragColor;
+}
+
+image toonImage = glsl(multisample<toonShader, samples>, sizeof(uImageUnit));

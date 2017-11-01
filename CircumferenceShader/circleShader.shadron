@@ -1,0 +1,34 @@
+#define real float
+#define complex vec2
+
+#include <multisample>
+
+glsl uniform sampler2D uImageUnit; 
+
+parameter float radius, border = 0 : range(0,1);
+parameter float red = 0, green= 0, blue = 0, alpha = 1: range(0,1);
+
+parameter float centerX=0.5,centerY=0.5 :range(-1,1);
+// Image dimensions
+const vec2 dimensions = vec2(520, 520);
+// Multisampling (actually samples^2 per pixel)
+parameter int samples = 2 : range(1, 4);
+
+glsl vec4 circleShader(vec2 vST) {
+    vec4 fFragColor;
+
+    vec2 circleCenter = vec2(centerX ,centerY);
+
+    vST -= circleCenter/1.0f;
+
+    float dist = sqrt(dot(vST,vST));
+
+    if(dist > radius + border || dist < radius - border)
+        fFragColor = vec4(red,green,blue,alpha);
+    else{
+         fFragColor = vec4(1.,1.,1.,1.);
+    }
+    return fFragColor;
+}
+
+image circleImage = glsl(multisample<circleShader, samples>, dimensions);

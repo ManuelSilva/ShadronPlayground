@@ -1,0 +1,41 @@
+#define real float
+#define complex vec2
+
+#include <multisample>
+
+
+sound sndFile = file();
+parameter float frequency = 0 : range(0,1);
+
+glsl uniform sampler2D uImageUnit; 
+
+parameter float radius = 0.353488, border = 0.013953 : range(0,1);
+parameter float red = 0, green= 0, blue = 0, alpha = 1: range(0,1);
+
+parameter float centerX=0.5,centerY=0.5 :range(-1,1);
+// Image dimensions
+const vec2 dimensions = vec2(520, 520);
+// Multisampling (actually samples^2 per pixel)
+parameter int samples = 2 : range(1, 4);
+
+glsl vec4 circleShader(vec2 vST) {
+
+	float rad = radius * shadron_Spectrum(sndFile, frequency).y;
+
+    vec4 fFragColor;
+
+    vec2 circleCenter = vec2(centerX ,centerY);
+
+    vST -= circleCenter/1.0f;
+
+    float dist = sqrt(dot(vST,vST));
+
+    if(dist > rad + border || dist < rad - border)
+        fFragColor = vec4(0,0,0,1);
+    else{
+         fFragColor = vec4(red,green,blue,1.);
+    }
+    return fFragColor;
+}
+
+animation circleImage = glsl(multisample<circleShader, samples>, dimensions);

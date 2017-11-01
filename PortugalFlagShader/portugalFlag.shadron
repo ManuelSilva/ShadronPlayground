@@ -1,0 +1,413 @@
+#define L 1280.0
+
+#include <multisample>
+
+
+const vec3 RED = vec3(1.0, 0.0, 0.0);
+const vec3 GREEN = vec3(0.0, 0.4, 0.0);
+const vec3 YELLOW = vec3(1.0, 1.0, 0.0);
+
+const vec3 BLUE = vec3(0.0, 0.2, 0.6);
+
+const vec3 BLACK = vec3(0.0, 0.0, 0.0);
+const vec3 WHITE = vec3(1.0, 1.0, 1.0);
+
+const ivec2 DIMENSIONS = ivec2(L,2*L/3);
+
+parameter int samples = 16 : range(1, 16);
+parameter float scale = 0.827906 : range(0,1);
+parameter vec2 lightPosAux = vec2(.5,-.5) : range(-1,1);
+parameter vec2 arcB = vec2(-.12,.12): range(-2,2);
+parameter float rotationTest = 0 : range(-6,6);
+parameter float lineMx = 0: range(0,15);
+parameter float lineMy = 1 : range(0,15);
+parameter float lineY, lineX = 0 : range(-2,10);
+
+glsl vec3 lineDraw(vec2 pos, vec3 fcolor, vec2 lineM, vec2 line){
+	float ll = L*scale;
+	if (pos.y*lineM.y + line.y >= pos.x*lineM.x + line.x)
+		return YELLOW;
+
+	return fcolor;
+}
+
+glsl vec3 linePreview(vec2 coord){
+	return lineDraw(coord, BLACK,  vec2(lineMx, lineMy), vec2(lineX, lineY));
+}
+
+image lineImg = glsl(linePreview, L/3, L/3);
+
+
+glsl vec3 rectangleDraw(vec2 pos, vec3 fcolor){
+
+	return fcolor;
+}
+
+
+glsl vec3 fakeSphere(vec2 pos, vec3 fcolor, vec2 arcT, vec3 arcColor, vec2 lightPos, float teta){
+
+		pos = pos*3/L - vec2(-0.5, -.5);
+		vec2 p = -1.0 + 2 * pos;
+
+	vec4 p3 = vec4(p,0,1);
+	p3 *= mat4(	 vec4(cos(teta),sin(teta),0,0)
+				,vec4(-sin(teta),cos(teta),0,0)
+				,vec4(0,0,1,0)
+				,vec4(0,0,0,1));
+
+
+	p = vec2(p3);
+
+  	float r = sqrt(dot(p,p));
+  	
+  	if (r < 1.0)
+  	{
+    	vec2 uv;
+   		float f = (1.0-sqrt(1.0-r))/(r);
+    	uv.x = p.x*f + lightPos.x;
+    	uv.y = p.y*f + lightPos.y;
+    	if(uv.y>= arcT.x && uv.y <= arcT.y)
+    		fcolor = arcColor;
+  	}
+	return fcolor;
+}
+
+glsl vec3 fakeSpherePreview(vec2 coord){
+	coord += vec2(-0.5, -.5);
+	return fakeSphere(coord * vec2(L/3, L/3), BLACK, arcB, YELLOW, lightPosAux,rotationTest);
+}
+
+image fakeSphereImg = glsl(fakeSpherePreview, L/3, L/3);
+
+
+glsl vec3 esferaArmilar(vec2 pos, vec3 fcolor){
+	float radAux = L/210;
+	//for preview
+	//pos.x -= L/6;
+	//pos.y -= L/6;
+	
+	float radius = L/6.22;
+	float radius2 = L/6.6;
+
+	float radius3 = L/6.19;
+	float radius4 = L/6.63;
+
+	float radius5 = L/6.04;
+	float radius6 = L/6.8;
+
+	float radius7 = L/6.07;
+	float radius8 = L/6.75;
+
+	if(pos.x * pos.x + pos.y * pos.y < (radius + radAux) * (radius + radAux)){
+		vec2 arc2 = vec2(0,0.418544);
+		fcolor = fakeSphere(pos, fcolor, vec2(-0.040310,0.060283), BLACK, arc2,0);
+		fcolor = fakeSphere(pos, fcolor, vec2(-0.032860,0.051102), YELLOW,arc2,0);
+		fcolor = fakeSphere(pos, fcolor, vec2(-0.025503,0.044108), BLACK, arc2,0);
+		fcolor = fakeSphere(pos, fcolor, vec2(-0.014135,0.040009), YELLOW,arc2,0);
+
+		vec2 p1 = vec2(-L/70,-L/6.5);
+		fcolor = fakeSphere(pos + p1, fcolor, vec2(-0.040310,0.060283), BLACK, arc2,0);
+		fcolor = fakeSphere(pos + p1, fcolor, vec2(-0.032860,0.051102), YELLOW,arc2,0);
+		fcolor = fakeSphere(pos + p1, fcolor, vec2(-0.025503,0.044108), BLACK, arc2,0);
+		fcolor = fakeSphere(pos + p1, fcolor, vec2(-0.014135,0.040009), YELLOW,arc2,0);
+
+		if(pos.x>0.5){
+			vec2 p2 = vec2(-L/30,-L/13);
+			fcolor = fakeSphere(pos + p2, fcolor, vec2(-0.040310,0.060283), BLACK, arc2,0);
+			fcolor = fakeSphere(pos + p2, fcolor, vec2(-0.032860,0.051102), YELLOW,arc2,0);
+			fcolor = fakeSphere(pos + p2, fcolor, vec2(-0.025503,0.044108), BLACK, arc2,0);
+			fcolor = fakeSphere(pos + p2, fcolor, vec2(-0.014135,0.040009), YELLOW,arc2,0);
+		}else{
+			vec2 p2 = vec2(L/30,-L/13);
+			fcolor = fakeSphere(pos + p2, fcolor, vec2(-0.040310,0.060283), BLACK, arc2,0);
+			fcolor = fakeSphere(pos + p2, fcolor, vec2(-0.032860,0.051102), YELLOW,arc2,0);
+			fcolor = fakeSphere(pos + p2, fcolor, vec2(-0.025503,0.044108), BLACK, arc2,0);
+			fcolor = fakeSphere(pos + p2, fcolor, vec2(-0.014135,0.040009), YELLOW,arc2,0);
+	
+		}
+
+	}
+
+	if(pos.x * pos.x + pos.y * pos.y < radius5 * radius5 
+			&& pos.x * pos.x + pos.y * pos.y > radius6 * radius6)
+		fcolor = BLACK;
+	if(pos.x * pos.x + pos.y * pos.y < radius7 * radius7 
+		&& pos.x * pos.x + pos.y * pos.y > radius8 * radius8)
+		fcolor = YELLOW;
+
+
+	if(pos.x * pos.x + pos.y * pos.y < radius3 * radius3 
+		&& pos.x * pos.x + pos.y * pos.y > radius4 * radius4)
+		fcolor = BLACK;
+	if(pos.x * pos.x + pos.y * pos.y < radius * radius 
+		&& pos.x * pos.x + pos.y * pos.y > radius2 * radius2)
+		fcolor = YELLOW;
+
+
+	if(pos.x * pos.x + pos.y * pos.y < (radius + radAux) * (radius + radAux)){
+
+
+		if(pos.x < L/110 && pos.x > -L/110)
+			fcolor = BLACK;
+		if(pos.x < L/120 && pos.x > -L/120)
+			fcolor = YELLOW;
+
+		if(pos.x < L/180 && pos.x > -L/180)
+			fcolor = BLACK;
+		if(pos.x < L/220 && pos.x > -L/220)
+			fcolor = YELLOW;
+
+		if(pos.y < L/9){//cheat to hyde top part!!
+			vec2 arc1 = vec2(0,-.395);
+			fcolor = fakeSphere(pos, fcolor, vec2(-0.040310,0.060283), BLACK, arc1,0);
+			fcolor = fakeSphere(pos, fcolor, vec2(-0.032860,0.051102), YELLOW,arc1,0);
+			fcolor = fakeSphere(pos, fcolor, vec2(-0.025503,0.044108), BLACK, arc1,0);
+			fcolor = fakeSphere(pos, fcolor, vec2(-0.014135,0.040009), YELLOW,arc1,0);
+		}
+		vec2 arc1 = vec2(0,-.395);
+		vec2 pos1 = vec2(L/30,L/6.4);
+		fcolor = fakeSphere(pos + pos1, fcolor, vec2(-0.040310,0.060283), BLACK, arc1,0);
+		fcolor = fakeSphere(pos + pos1, fcolor, vec2(-0.032860,0.051102), YELLOW,arc1,0);
+		fcolor = fakeSphere(pos + pos1, fcolor, vec2(-0.025503,0.044108), BLACK, arc1,0);
+		fcolor = fakeSphere(pos + pos1, fcolor, vec2(-0.014135,0.040009), YELLOW,arc1,0);
+
+		if(pos.x <= .5){
+			vec2 pos2 = vec2(L/30,L/12);
+			fcolor = fakeSphere(pos + pos2, fcolor, vec2(-0.040310,0.060283), BLACK, arc1,0);
+			fcolor = fakeSphere(pos + pos2, fcolor, vec2(-0.032860,0.051102), YELLOW,arc1,0);
+			fcolor = fakeSphere(pos + pos2, fcolor, vec2(-0.025503,0.044108), BLACK, arc1,0);
+			fcolor = fakeSphere(pos + pos2, fcolor, vec2(-0.014135,0.040009), YELLOW,arc1,0);
+		}else{
+			vec2 pos2 = vec2(-L/30,L/12);
+			fcolor = fakeSphere(pos + pos2, fcolor, vec2(-0.040310,0.060283), BLACK, arc1,0);
+			fcolor = fakeSphere(pos + pos2, fcolor, vec2(-0.032860,0.051102), YELLOW,arc1,0);
+			fcolor = fakeSphere(pos + pos2, fcolor, vec2(-0.025503,0.044108), BLACK, arc1,0);
+			fcolor = fakeSphere(pos + pos2, fcolor, vec2(-0.014135,0.040009), YELLOW,arc1,0);
+		}
+
+		vec2 arc3 = vec2(0,0);
+		fcolor = fakeSphere(pos, fcolor, vec2(-0.11,0.11), BLACK, arc3,-3.655813);
+		fcolor = fakeSphere(pos, fcolor, vec2(-0.10,0.10), YELLOW,arc3,-3.655813);
+		fcolor = fakeSphere(pos, fcolor, vec2(-0.09,0.09), BLACK, arc3,-3.655813);
+		fcolor = fakeSphere(pos, fcolor, vec2(-0.08,0.08), YELLOW,arc3,-3.655813);
+
+	}
+	return fcolor;
+}
+
+glsl vec3 esferaArmilarPreview(vec2 coord){
+
+	coord.x -= 0.5;
+	coord.y -= 0.5;
+	return esferaArmilar(coord * vec2(L/3, L/3), WHITE);
+}
+
+image esfArm = glsl(esferaArmilarPreview, L/3, L/3);
+
+glsl vec3 escudoShape(vec2 pos, vec3 fcolor, vec3 shieldColor, float scale){
+
+	float ll = L * scale;
+
+	float h = pos.y + ll/8.5;
+	float xx = pos.x * pos.x;
+	float yy = h*h;
+	float a = ll/6;
+	float aa = a*a;
+	float b = ll/2;
+	float bb = b*b;
+
+	float w = xx;
+	float z = yy;
+
+	float rad = ll/8.3;
+
+	if(w+z < rad * rad && h < 0.5 )
+		fcolor = shieldColor;
+	
+	if(pos.y > -ll/8.4 && pos.y < ll/19 && pos.x < ll/8.3 && pos.x > - ll/8.3)
+		fcolor = shieldColor;
+
+
+	return fcolor;
+}
+
+glsl vec3 escudoShapePreview(vec2 coord){
+	coord.x -= 0.5;
+	coord.y -= 0.85;
+	return escudoShape(coord * vec2(L/5 + 100, 7*L/30 + 100), BLACK, BLUE, scale);
+}
+
+image escudoShapeImg = glsl(escudoShapePreview, L/5, 7*L/30);
+
+glsl vec3 quinas(vec2 pos, vec3 fcolor, float s){
+	float ll = L * s;
+	fcolor = escudoShape(pos,fcolor, BLUE,s);
+
+	float h1 = pos.y + ll/12;
+	float j1 = pos.x + 0;
+	float xx1 = j1*j1;
+	float yy1 = h1*h1;
+
+	float w1 = xx1;
+	float z1 = yy1;
+
+	float rad = ll/42;
+
+	if(w1+z1 < rad * rad )
+		fcolor = WHITE;
+
+
+	float h2 = pos.y + ll/35;
+	float j2 = pos.x + ll/15;
+	float xx2 = j2*j2;
+	float yy2 = h2*h2;
+
+	float w2 = xx2;
+	float z2 = yy2;
+
+	if(w2+z2 < rad * rad )
+		fcolor = WHITE;
+
+	float h3 = pos.y + ll/35;
+	float j3 = pos.x - ll/15;
+	float xx3 = j3*j3;
+	float yy3 = h3*h3;
+
+	float w3 = xx3;
+	float z3 = yy3;
+
+	if(w3+z3 < rad * rad )
+		fcolor = WHITE;
+
+
+	float h4 = pos.y + ll/7;
+	float j4 = pos.x - ll/15;
+	float xx4 = j4*j4;
+	float yy4 = h4*h4;
+
+	float w4 = xx4;
+	float z4 = yy4;
+
+	if(w4+z4 < rad * rad )
+		fcolor = WHITE;
+
+	float h5 = pos.y + ll/7;
+	float j5 = pos.x + ll/15;
+	float xx5 = j5*j5;
+	float yy5 = h5*h5;
+
+	float w5 = xx5;
+	float z5 = yy5;
+
+	if(w5+z5 < rad * rad )
+		fcolor = WHITE;
+
+	return fcolor;
+}
+
+glsl vec3 quinasPreview(vec2 coord){
+	coord.x -= 0.5;
+	coord.y -= 0.85;
+	return quinas(coord * vec2(L/5 + 100, 7*L/30 + 100), BLACK, scale);
+}
+
+image quinasImg = glsl(quinasPreview, L/5, 7*L/30);
+
+
+
+glsl vec3 escudo(vec2 pos2, vec3 fcolor){
+
+	vec2 pos3 = vec2(pos2.x, pos2.y - L/ 13.8);
+	fcolor = escudoShape(pos3, fcolor, BLACK, 0.82);
+
+	vec2 pos4 = vec2(pos3.x, pos3.y + L /500);
+	fcolor = escudoShape(pos4, fcolor, WHITE, 0.80);
+
+	vec2 pos5 = vec2(pos4.x, pos4.y + L/900);
+	fcolor = escudoShape(pos5, fcolor, BLACK, 0.79);
+
+	vec2 pos6 = vec2(pos5.x, pos5.y + L /900);
+	fcolor = escudoShape(pos6, fcolor, RED, 0.78);
+
+	vec2 pos7 = vec2(pos6.x, pos6.y + L /40);
+	fcolor = escudoShape(pos7, fcolor, BLACK, 0.49);
+
+	vec2 pos8 = vec2(pos7.x, pos7.y + L/350);
+	fcolor = escudoShape(pos8, fcolor, WHITE, 0.46);
+
+	vec2 pos9 = vec2(pos8.x, pos8.y - L/68);
+	fcolor = quinas(pos9, fcolor, 0.110);
+
+	vec2 pos10 = vec2(pos8.x, pos8.y + L/33.5);
+	fcolor = quinas(pos10, fcolor, 0.110);
+
+	vec2 pos11 = vec2(pos8.x, pos8.y + L/13.9);
+	fcolor = quinas(pos11, fcolor, 0.110);
+
+	vec2 pos12 = vec2(pos8.x + L/29, pos8.y + L/33.5);
+	fcolor = quinas(pos12, fcolor, 0.110);
+
+	vec2 pos13 = vec2(pos8.x - L/29, pos8.y + L/33.5);
+	fcolor = quinas(pos13, fcolor, 0.110);
+
+
+	return fcolor;
+}
+
+glsl vec3 escudoPreview(vec2 coord){
+	coord.x -= 0.5;
+	coord.y -= 0.5;
+	return escudo(coord * vec2(L/5 , 7*L/30), WHITE);
+}
+
+image escudoImg = glsl(escudoPreview , L/5, 7*L/30);
+
+
+glsl vec3 center(vec2 pos, vec3 fcolor){
+	
+
+	vec2 pos2 = vec2(pos.x - 2*L/5, pos.y - 2*L/6);
+	fcolor = esferaArmilar(pos2, fcolor);
+
+	fcolor = escudo(pos2, fcolor);
+
+	return fcolor;
+}
+
+glsl vec3 centerPreview(vec2 coord){
+
+	coord.x += 0.7;
+	coord.y += 0.5;
+	return center(coord * vec2(L/3, L/3), WHITE);
+}
+
+image centerImg = glsl(centerPreview , L/3, L/3);
+
+glsl vec4 ptFlag(vec2 coord){
+	vec3 fcolor = RED;
+	
+	vec2 pos = vec2(L, 2*L/3) * coord;
+
+	if(pos.x < 2*L/5)
+		fcolor = GREEN;
+
+	fcolor = center(pos, fcolor);
+
+	return vec4(fcolor,1);
+}
+
+image Flag = glsl(multisample<ptFlag, samples>, DIMENSIONS);
+
+
+parameter float diffFactor = 1.0 : logrange(1.0, 256.0);
+
+image Reference = file("1280_Reference_Img.png");
+
+glsl vec3 compare(vec2 coord){
+	vec3 a = texture(Reference, coord).rgb;
+	vec3 b = texture(Flag, coord).rgb;
+
+	return diffFactor*abs(b-a);
+} 
+
+image Difference = glsl(compare, DIMENSIONS);
