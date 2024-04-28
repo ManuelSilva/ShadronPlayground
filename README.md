@@ -12,7 +12,7 @@ Summary of current experiments:
 |------------|--------|
 | Trying to recreate the complicated portuguese flag using only math| ![WIP Portuguese Flag Shader](./_Imgs/ShaderPortugalFlag_WIP.png) |
 | Implementation of a GLSL Loading Screen for a past scrapped project. | ![Loading Screen for scrapped project](./_Imgs/LoadingScreen_Test.gif) |
-| Collection of shaders used in past side projects involving circumferences and music. | ![Circumference Shader Experiments](./_Imgs/CDXShader_Test.gif) |
+| Collection of shaders used in past side projects involving circumferences and music. | ![Circumference Shader Experiments](./_Imgs/CDXShader_Test.png) |
 | Implementation of an outline shader | ![Outline Shader](./_Imgs/OutlineShader.png) |
 
 ...
